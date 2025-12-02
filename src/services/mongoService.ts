@@ -1,0 +1,79 @@
+import { MongoClient, Db, Collection, WithId, Document } from 'mongodb';
+
+export interface UserDocument extends WithId<Document> {
+  email: string;
+  full_name: string;
+  password?: string;
+  role: 'student' | 'guide' | 'coordinator' | 'admin' | 'ethics_committee';
+  department: string;
+  specialization: string;
+  phone: string;
+  student_id?: string;
+  employee_id?: string;
+  expertise: string[];
+  max_students?: number;
+  current_students?: number;
+  experience_level: 'junior' | 'senior' | 'expert';
+  availability_status: 'available' | 'busy' | 'unavailable';
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TopicDocument extends WithId<Document> {
+  title: string;
+  description: string;
+  student_id: string;
+  guide_id?: string;
+  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PendingUserDocument extends WithId<Document> {
+  email: string;
+  full_name: string;
+  department: string;
+  specialization: string;
+  phone: string;
+  student_id?: string;
+  employee_id?: string;
+  requested_role: 'student' | 'guide' | 'coordinator' | 'admin' | 'ethics_committee';
+  status: 'pending' | 'approved' | 'rejected';
+  requested_at: Date;
+  reviewed_at?: Date;
+  reviewed_by?: string;
+  rejection_reason?: string;
+}
+
+class MongoDatabase {
+  private client: MongoClient | null = null;
+  private db: Db | null = null;
+
+  async connect(): Promise<void> {
+    try {
+      // Use your MongoDB Atlas connection string
+      const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+      this.client = new MongoClient(uri);
+      await this.client.connect();
+      this.db = this.client.db('pg_dissertation_db');
+      console.log('Connected to MongoDB Atlas');
+    } catch (error) {
+      console.error('MongoDB connection error:', error);
+      throw error;
+    }
+  }
+
+  getCollection(name: string): Collection {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+    return this.db.collection(name);
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.client) {
+      await this.client.close();
+      console.log('Disconnected from MongoDB');
+    }
+  }
+}
