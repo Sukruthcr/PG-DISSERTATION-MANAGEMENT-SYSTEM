@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, MessageSquare } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, MessageSquare, User, Mail, Building, GraduationCap } from 'lucide-react';
 import { 
-  getApprovals, 
-  approveApproval, 
-  rejectApproval,
-  Approval as ApprovalType
+  getPendingUsers, 
+  approvePendingUser, 
+  rejectPendingUser,
+  PendingUser
 } from '../../services/databaseService';
+import { useAuth } from '../../hooks/useAuth';
 
 interface ApprovalWorkflowProps {
   userRole: string;
@@ -18,29 +19,30 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
   onApprove, 
   onReject 
 }) => {
-  const [approvals, setApprovals] = useState<ApprovalType[]>([]);
+  const { user } = useAuth();
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedApproval, setSelectedApproval] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [comment, setComment] = useState('');
 
-  // Load approvals from database
+  // Load pending users from database
   useEffect(() => {
-    loadApprovals();
+    loadPendingUsers();
   }, []);
 
-  const loadApprovals = async () => {
+  const loadPendingUsers = async () => {
     try {
       setLoading(true);
-      const data = await getApprovals();
-      setApprovals(data);
+      const data = await getPendingUsers();
+      setPendingUsers(data);
     } catch (error) {
-      console.error('Error loading approvals:', error);
+      console.error('Error loading pending users:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const pendingApprovals = approvals.filter(a => a.status === 'pending');
+  const pendingApprovals = pendingUsers.filter(u => u.status === 'pending');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,28 +68,28 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
     }
   };
 
-  const handleApprove = async (approvalId: string) => {
+  const handleApprove = async (userId: string) => {
     try {
-      await approveApproval(approvalId, comment);
-      onApprove(approvalId, comment);
-      setSelectedApproval(null);
+      await approvePendingUser(userId, user?.id || 'admin');
+      onApprove(userId, comment);
+      setSelectedUser(null);
       setComment('');
-      // Reload approvals to reflect changes
-      await loadApprovals();
+      // Reload pending users to reflect changes
+      await loadPendingUsers();
     } catch (error) {
       console.error('Error approving:', error);
       alert('Failed to approve. Please try again.');
     }
   };
 
-  const handleReject = async (approvalId: string) => {
+  const handleReject = async (userId: string) => {
     try {
-      await rejectApproval(approvalId, comment);
-      onReject(approvalId, comment);
-      setSelectedApproval(null);
+      await rejectPendingUser(userId, user?.id || 'admin', comment);
+      onReject(userId, comment);
+      setSelectedUser(null);
       setComment('');
-      // Reload approvals to reflect changes
-      await loadApprovals();
+      // Reload pending users to reflect changes
+      await loadPendingUsers();
     } catch (error) {
       console.error('Error rejecting:', error);
       alert('Failed to reject. Please try again.');
@@ -130,15 +132,15 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
           <p className="text-sm text-gray-600">Pending Approvals</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-green-600">{approvals.filter(a => a.status === 'approved').length}</p>
+          <p className="text-2xl font-bold text-green-600">{pendingUsers.filter(u => u.status === 'approved').length}</p>
           <p className="text-sm text-gray-600">Approved</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-red-600">{approvals.filter(a => a.status === 'rejected').length}</p>
+          <p className="text-2xl font-bold text-red-600">{pendingUsers.filter(u => u.status === 'rejected').length}</p>
           <p className="text-sm text-gray-600">Rejected</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-yellow-600">{approvals.filter(a => a.status === 'requires_changes').length}</p>
+          <p className="text-2xl font-bold text-yellow-600">0</p>
           <p className="text-sm text-gray-600">Needs Changes</p>
         </div>
       </div>
@@ -150,50 +152,55 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
         </div>
         
         <div className="divide-y divide-gray-200">
-          {approvals.map((approval) => {
-            const StatusIcon = getStatusIcon(approval.status);
+          {pendingUsers.map((user) => {
+            const StatusIcon = getStatusIcon(user.status);
             
             return (
-              <div key={approval.id} className="p-6 hover:bg-gray-50">
+              <div key={user.id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
-                    <div className={`p-2 rounded-full ${getStatusColor(approval.status)}`}>
+                    <div className={`p-2 rounded-full ${getStatusColor(user.status)}`}>
                       <StatusIcon className="h-5 w-5" />
                     </div>
                     
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="font-medium text-gray-900 capitalize">
-                          {approval.entity_type} Approval
+                          User Registration
                         </span>
                         <span className="text-sm text-gray-500">
-                          #{approval.entity_id}
+                          {user.requested_role}
                         </span>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-2">
-                        Submitted on {formatDate(approval.created_at)}
-                      </p>
+                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-2">
+                        <div>
+                          <span className="font-medium">Name:</span> {user.full_name}
+                        </div>
+                        <div>
+                          <span className="font-medium">Email:</span> {user.email}
+                        </div>
+                        <div>
+                          <span className="font-medium">Department:</span> {user.department}
+                        </div>
+                        <div>
+                          <span className="font-medium">Requested:</span> {formatDate(user.requested_at)}
+                        </div>
+                      </div>
                       
-                      {approval.comments && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                          <div className="flex items-start">
-                            <MessageSquare className="h-4 w-4 text-blue-600 mr-2 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">Comments</p>
-                              <p className="text-sm text-blue-800 mt-1">{approval.comments}</p>
-                            </div>
-                          </div>
+                      {user.student_id && (
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="font-medium">Student ID:</span> {user.student_id}
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  {approval.status === 'pending' && (userRole === 'coordinator' || userRole === 'ethics_committee' || userRole === 'admin') && (
+                  {user.status === 'pending' && (userRole === 'coordinator' || userRole === 'ethics_committee' || userRole === 'admin') && (
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setSelectedApproval(approval.id)}
+                        onClick={() => setSelectedUser(user)}
                         className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                       >
                         Review
@@ -206,21 +213,28 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
           })}
         </div>
 
-        {approvals.length === 0 && (
+        {pendingUsers.length === 0 && (
           <div className="p-12 text-center">
             <CheckCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No approvals found</h3>
-            <p className="text-gray-600">All requests have been processed</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No pending registrations found</h3>
+            <p className="text-gray-600">All user registrations have been processed</p>
           </div>
         )}
       </div>
 
       {/* Approval Modal */}
-      {selectedApproval && (
+      {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Review Approval</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Review User Registration</h3>
+              <div className="mt-2 text-sm text-gray-600">
+                <p><strong>Name:</strong> {selectedUser.full_name}</p>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>Role:</strong> {selectedUser.requested_role}</p>
+                <p><strong>Department:</strong> {selectedUser.department}</p>
+                {selectedUser.student_id && <p><strong>Student ID:</strong> {selectedUser.student_id}</p>}
+              </div>
             </div>
             
             <div className="p-6 space-y-4">
@@ -240,19 +254,19 @@ export const ApprovalWorkflow: React.FC<ApprovalWorkflowProps> = ({
 
             <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
               <button
-                onClick={() => setSelectedApproval(null)}
+                onClick={() => setSelectedUser(null)}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleReject(selectedApproval)}
+                onClick={() => handleReject(selectedUser.id)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Reject
               </button>
               <button
-                onClick={() => handleApprove(selectedApproval)}
+                onClick={() => handleApprove(selectedUser.id)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 Approve

@@ -145,11 +145,11 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, userRole 
 
   const getColorClasses = (color: string) => {
     const colors = {
-      blue: 'bg-blue-50 text-blue-600 border-blue-200',
-      green: 'bg-green-50 text-green-600 border-green-200',
-      orange: 'bg-orange-50 text-orange-600 border-orange-200',
+      blue: 'bg-primary-50 text-primary-600 border-primary-200',
+      green: 'bg-success-50 text-success-600 border-success-200',
+      orange: 'bg-warning-50 text-warning-600 border-warning-200',
       purple: 'bg-purple-50 text-purple-600 border-purple-200',
-      red: 'bg-red-50 text-red-600 border-red-200',
+      red: 'bg-error-50 text-error-600 border-error-200',
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
@@ -159,26 +159,26 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, userRole 
       {statsCards.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div key={index} className="card-hover animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 rounded-lg border ${getColorClasses(stat.color)}`}>
-                <Icon className="h-5 w-5" />
+              <div className={`p-3 rounded-xl border ${getColorClasses(stat.color)} transform hover:scale-110 transition-all duration-300`}>
+                <Icon className="h-6 w-6" />
               </div>
               <div className="flex items-center text-sm">
-                {stat.changeType === 'increase' && <TrendingUp className="h-4 w-4 text-green-500 mr-1" />}
-                {stat.changeType === 'decrease' && <TrendingDown className="h-4 w-4 text-red-500 mr-1" />}
+                {stat.changeType === 'increase' && <TrendingUp className="h-4 w-4 text-success-500 mr-1" />}
+                {stat.changeType === 'decrease' && <TrendingDown className="h-4 w-4 text-error-500 mr-1" />}
                 <span className={
-                  stat.changeType === 'increase' ? 'text-green-600' :
-                  stat.changeType === 'decrease' ? 'text-red-600' :
-                  'text-gray-500'
+                  stat.changeType === 'increase' ? 'text-success-600 font-medium' :
+                  stat.changeType === 'decrease' ? 'text-error-600 font-medium' :
+                  'text-secondary-500'
                 }>
                   {stat.change}
                 </span>
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
-              <p className="text-sm text-gray-600">{stat.title}</p>
+              <p className="text-xl font-bold text-secondary-900 mb-1">{stat.value}</p>
+              <p className="text-xs text-secondary-600 font-medium">{stat.title}</p>
             </div>
           </div>
         );

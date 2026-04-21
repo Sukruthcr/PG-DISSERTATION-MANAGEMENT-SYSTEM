@@ -137,10 +137,10 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-8">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">
+        <h1 className="text-xl font-bold mb-2">
           Welcome back, {user?.full_name}
         </h1>
-        <p className="text-blue-100">
+        <p className="text-blue-100 text-sm">
           Here's what's happening with your {user?.role === 'student' ? 'research' : 'team'} today.
         </p>
       </div>

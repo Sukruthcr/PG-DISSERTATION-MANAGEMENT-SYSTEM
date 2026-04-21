@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCheck } from 'lucide-react';
+import { UserCheck, GraduationCap } from 'lucide-react';
 import { AuthProvider } from './components/AuthProvider';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Layout/Header';
@@ -22,11 +22,16 @@ import { exportTopicsToCSV, generateTopicReport } from './utils/exportUtils';
 import { useAuth } from './hooks/useAuth';
 import { useTopics } from './hooks/useTopics';
 import { Topic } from './types';
+import { LandingPage } from './components/Landing/LandingPage';
+import { AboutSection } from './components/Landing/AboutSection';
+import { FeaturesShowcase } from './components/Landing/FeaturesShowcase';
+import { FuturisticLandingPage } from './components/Landing/FuturisticLandingPage';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const { topics, addTopic, updateTopic, getTopicsByStudent } = useTopics();
   const [activeView, setActiveView] = useState('dashboard');
+  const [landingView, setLandingView] = useState('home');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [showTopicDetail, setShowTopicDetail] = useState(false);
   const [showTopicForm, setShowTopicForm] = useState(false);
@@ -249,8 +254,56 @@ const AppContent: React.FC = () => {
             
             <ApprovalWorkflow 
               userRole={user?.role || 'student'}
-              onApprove={(id, comment) => alert(`Approved: ${id} with comment: ${comment}`)}
-              onReject={(id, comment) => alert(`Rejected: ${id} with comment: ${comment}`)}
+              onApprove={(id, comment) => {
+                console.log(`Approved: ${id} with comment: ${comment}`);
+                // Show success message
+                const successMessage = document.createElement('div');
+                successMessage.innerHTML = `
+                  <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 00-8-8 4 4 0 008 8zm3.707-9.293a1 1 0 00-1.414 1.414L9.586 16.586A2 2 0 017.172 12.828 2.828 2.828zm-8.486 8H12a1 1 0 00-1 1v4a1 1 0 001 1h3.586l-1.707 1.707A4 4 0 011.586 8.414 8.414z" clip-rule="evenodd"/>
+                      </svg>
+                      Approval successful!
+                    </div>
+                  </div>
+                `;
+                successMessage.style.cssText = `
+                  position: fixed;
+                  top: 1rem;
+                  right: 1rem;
+                  z-index: 9999;
+                `;
+                document.body.appendChild(successMessage);
+                setTimeout(() => {
+                  document.body.removeChild(successMessage);
+                }, 3000);
+              }}
+              onReject={(id, comment) => {
+                console.log(`Rejected: ${id} with comment: ${comment}`);
+                // Show rejection message
+                const rejectMessage = document.createElement('div');
+                rejectMessage.innerHTML = `
+                  <div class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 00-8-8 4 4 0 008 8zm3.707-9.293a1 1 0 00-1.414 1.414L9.586 16.586A2 2 0 017.172 12.828 2.828 2.828zm-8.486 8H12a1 1 0 00-1 1v4a1 1 0 001 1h3.586l-1.707 1.707A4 4 0 011.586 8.414 8.414z" clip-rule="evenodd"/>
+                      </svg>
+                      Rejected successfully!
+                    </div>
+                  </div>
+                `;
+                rejectMessage.style.cssText = `
+                  position: fixed;
+                  top: 1rem;
+                  right: 1rem;
+                  z-index: 9999;
+                `;
+                document.body.appendChild(rejectMessage);
+                setTimeout(() => {
+                  document.body.removeChild(rejectMessage);
+                }, 3000);
+              }}
             />
           </div>
         );
@@ -312,7 +365,83 @@ const AppContent: React.FC = () => {
   }
 
   if (!user) {
-    return <LoginForm />;
+    return (
+      <div>
+        {landingView === 'home' && <FuturisticLandingPage />}
+        {landingView === 'about' && <AboutSection />}
+        {landingView === 'features' && <FeaturesShowcase />}
+        {landingView === 'login' && <LoginForm />}
+        
+        {/* Floating Login Button */}
+        {landingView !== 'login' && (
+          <div className="fixed bottom-8 right-8 z-50">
+            <button
+              onClick={() => setLandingView('login')}
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-full shadow-strong hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center"
+            >
+              <UserCheck className="h-5 w-5 mr-2" />
+              Sign In
+            </button>
+          </div>
+        )}
+        
+        {/* Landing Navigation */}
+        {landingView !== 'login' && (
+          <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-secondary-200 z-40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                <div className="flex items-center">
+                  <div className="flex items-center">
+                    <div className="bg-gradient-primary p-2 rounded-lg mr-3">
+                      <GraduationCap className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="text-xl font-bold text-gradient">PG Dissertation</span>
+                  </div>
+                </div>
+                <div className="flex space-x-8">
+                  <button
+                    onClick={() => setLandingView('home')}
+                    className={`text-sm font-medium transition-colors ${
+                      landingView === 'home' ? 'text-primary-600' : 'text-secondary-600 hover:text-secondary-900'
+                    }`}
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => setLandingView('about')}
+                    className={`text-sm font-medium transition-colors ${
+                      landingView === 'about' ? 'text-primary-600' : 'text-secondary-600 hover:text-secondary-900'
+                    }`}
+                  >
+                    About
+                  </button>
+                  <button
+                    onClick={() => setLandingView('features')}
+                    className={`text-sm font-medium transition-colors ${
+                      landingView === 'features' ? 'text-primary-600' : 'text-secondary-600 hover:text-secondary-900'
+                    }`}
+                  >
+                    Features
+                  </button>
+                </div>
+              </div>
+            </div>
+          </nav>
+        )}
+        
+        {/* Back to Landing Button for Login */}
+        {landingView === 'login' && (
+          <div className="fixed top-8 left-8 z-50">
+            <button
+              onClick={() => setLandingView('home')}
+              className="text-secondary-600 hover:text-secondary-900 font-medium transition-colors flex items-center"
+            >
+              &larr; Back to Home
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
